@@ -1,14 +1,6 @@
 <template>
   <div>
-
-        <el-select v-model="appVal" placeholder="请选择应用">
-          <el-option
-            v-for="item in appList"
-            :key="item.id"
-            :label="item.appsName"
-            :value="item.appsId"
-          ></el-option>
-        </el-select>
+        <appListComponent @appValEmitFn="getAppVal"></appListComponent>
         <el-button class="ml-15" type="primary" :disabled="getNumberBtn" @click="getNumberFn">获取号码</el-button>
         <el-input class="ml-15" style="width:200px;display:inline-block;" v-model.trim="appointBillNoMsisdn" placeholder="请输入随机号码"></el-input>
         <el-button class="ml-15" type="primary" :disabled="appointBillNoBtn" @click="appointBillNoFn">分配号码</el-button>
@@ -100,19 +92,13 @@
           </el-col>
         </el-row>
 
-
-
-
-
-
-
-
   </div>
 </template>
 
 <script>
+import appListComponent from '../../components/codeModule/appList'
 import { baseURL } from "../../common/js/ipconfig";
-import {getAppsList,getBillNo,getVerifCode,customerAppsList,consumeList,releaseBillNo,appointBillNo} from "../../api/api.js";
+import {getBillNo,getVerifCode,consumeList,releaseBillNo,appointBillNo} from "../../api/api.js";
 var ajaxServiceUrl = baseURL.ws1;
 var ws; //websocket实例
 var lockReconnect = false; //避免重复连接
@@ -121,7 +107,6 @@ export default {
   name: "getCode",
   data() {
     return {
-      appList: [],
       appVal: null,
       alertShow: false,
       alertSuccess: null,
@@ -141,10 +126,10 @@ export default {
     };
   },
   created() {
-    this.getAppList();
     this.createWebSocket(ajaxServiceUrl);
   },
   destroyed() {},
+  components:{appListComponent},
   mounted() {
     this.windowHeight = document.documentElement.clientHeight;
     window.onresize = () => {
@@ -168,6 +153,9 @@ export default {
     }
   },
   methods: {
+    getAppVal(data){
+      this.appVal=data;
+    },
     async tableFn() {
       if (this.cardNumber) {
         let paramsObj = {
@@ -294,28 +282,6 @@ export default {
         }
       };
       return heartCheck;
-    },
-
-    getAppList() {
-      try {
-        let userName = JSON.parse(localStorage.getItem("userLoginInfo"))
-          .userName;
-        let data;
-        let paramsObj = {};
-        let handlerFn = async (url, paramsObj) => {
-          data = await this.$axios.post(url, this._qs.stringify(paramsObj));
-          data.status == 0
-            ? (this.appList = data.data)
-            : this.$message.error(data.message);
-        };
-        if (userName == "admin") {
-          handlerFn(getAppsList, paramsObj);
-        } else {
-          handlerFn(customerAppsList, paramsObj);
-        }
-      } catch (err) {
-        this.$message.error("网络异常，请稍候再试！");
-      }
     },
 
     async getNumberFn() {
